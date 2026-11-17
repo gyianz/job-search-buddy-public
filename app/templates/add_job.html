@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include "_page_head.html" %}
+  <title>Add job - Job Search Buddy</title>
+  <style>
+    .from { background: #e9f2ff; color: #0055cc; border-radius: 4px; padding: 8px 12px; margin-bottom: 16px; font-size: 13px; }
+    .from.warn { background: #fff7d6; color: #7f5f01; }
+  </style>
+</head>
+<body>
+  {% include "_nav.html" %}
+  <div class="page">
+    <div class="from" id="from" hidden></div>
+    {% set lookup = false %}{% set standalone = true %}
+    {% include "_add_job_form.html" %}
+  </div>
+  <datalist id="company-list">
+    {% for company in companies %}<option value="{{ company }}">{% endfor %}
+  </datalist>
+  <script>
+  (function () {
+    // The bookmarklet passes the job in the URL fragment, which never leaves
+    // this browser (it isn't sent to the server).
+    const raw = location.hash.slice(1);
+    if (!raw) return;
+    history.replaceState(null, "", location.pathname);
+    let job;
+    try { job = JSON.parse(decodeURIComponent(raw)); } catch (e) { return; }
+    const f = document.getElementById("add-form").elements;
+    for (const key of ["title", "company", "location", "url", "description"]) {
+      if (typeof job[key] === "string") f[key].value = job[key].trim();
+    }
+    const from = document.getElementById("from");
+    let site = "";
+    try { site = new URL(job.url).hostname.replace(/^www\./, ""); } catch (e) {}
+    const missing = ["title", "company", "description"].filter(k => !f[k].value.trim());
+    if (missing.length) {
+      from.textContent = "Read from " + (site || "the page") + ", but couldn't find the " +
+        missing.join(", ") + ". Fill " + (missing.length > 1 ? "them" : "it") +
+        " in below. Tip: select the job description on the page before clicking the bookmark.";
+      from.classList.add("warn");
+    } else {
+      from.textContent = "Read from " + (site || "the page") + ". Check the details, then add the job.";
+    }
+    from.hidden = false;
+    (missing.length ? f[missing[0]] : f.title).focus();
+  })();
+  </script>
+</body>
+</html>

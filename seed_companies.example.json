@@ -1,0 +1,68 @@
+[
+  {
+    "name": "Culture Amp",
+    "platform": "greenhouse",
+    "token": "cultureamp",
+    "title_keywords": [
+      "engineer",
+      "product",
+      "data",
+      "design"
+    ]
+  },
+  {
+    "name": "Deputy",
+    "platform": "lever",
+    "token": "deputy",
+    "title_keywords": [
+      "engineer",
+      "product",
+      "data",
+      "design"
+    ]
+  },
+  {
+    "name": "Databricks",
+    "platform": "greenhouse",
+    "token": "databricks",
+    "title_keywords": [
+      "engineer",
+      "product",
+      "data",
+      "design"
+    ]
+  },
+  {
+    "name": "Figma",
+    "platform": "greenhouse",
+    "token": "figma",
+    "title_keywords": [
+      "engineer",
+      "product",
+      "data",
+      "design"
+    ]
+  },
+  {
+    "name": "Stripe",
+    "platform": "greenhouse",
+    "token": "stripe",
+    "title_keywords": [
+      "engineer",
+      "product",
+      "data",
+      "design"
+    ]
+  },
+  {
+    "name": "Airbnb",
+    "platform": "greenhouse",
+    "token": "airbnb",
+    "title_keywords": [
+      "engineer",
+      "product",
+      "data",
+      "design"
+    ]
+  }
+]

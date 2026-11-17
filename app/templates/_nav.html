@@ -1,0 +1,16 @@
+<style>
+  .mainnav { display: flex; gap: 2px; margin-left: 16px; }
+  .mainnav a { color: var(--subtle); font-weight: 500; padding: 6px 10px; border-radius: 3px; position: relative; }
+  .mainnav a:hover { background: #f1f2f4; color: var(--text); text-decoration: none; }
+  .mainnav a[aria-current="page"] { color: var(--brand); }
+  .mainnav a[aria-current="page"]::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -13px; height: 3px; border-radius: 3px 3px 0 0; background: var(--brand); }
+</style>
+<header class="topnav">
+  <a class="logo" href="/"><span class="logo-mark">J</span> Job Search Buddy</a>
+  <nav class="mainnav" aria-label="Main">
+    <a href="/" {% if nav == "board" %}aria-current="page"{% endif %}>Board</a>
+    <a href="/profile" {% if nav == "profile" %}aria-current="page"{% endif %}>Profile</a>
+    <a href="/boards" {% if nav == "boards" %}aria-current="page"{% endif %}>Job boards</a>
+    <a href="/rubric" {% if nav == "rubric" %}aria-current="page"{% endif %}>Rubric</a>
+  </nav>
+</header>

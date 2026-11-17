@@ -1,0 +1,54 @@
+<style>
+  .add-form h2 { margin: 0 0 4px; font-size: 20px; font-weight: 600; }
+  .add-form .hint { margin: 0 0 16px; color: var(--subtle); font-size: 13px; }
+  .add-form .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .add-form label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--subtle); margin-bottom: 12px; }
+  .add-form input:not([type=checkbox]), .add-form textarea {
+    font: inherit; font-size: 14px; color: var(--text); padding: 6px 8px;
+    border: 2px solid var(--border); border-radius: 3px; outline: none; resize: vertical;
+  }
+  .add-form input:focus, .add-form textarea:focus { border-color: var(--brand); }
+  .add-form label.check { flex-direction: row; align-items: center; gap: 8px; font-size: 14px; font-weight: 400; color: var(--text); }
+  .add-form .req { color: #ae2e24; }
+  .add-form .url-row { display: flex; gap: 8px; }
+  .add-form .url-row input { flex: 1; min-width: 0; }
+  .add-form .lookup-status { margin: -4px 0 12px; font-size: 13px; color: var(--subtle); }
+  .add-form .lookup-status.ok { color: #216e4e; }
+  .add-form .lookup-status.warn { color: #7f5f01; }
+  .add-form .lookup-status.error { color: #ae2e24; }
+  .add-form .form-error { color: #ae2e24; margin: 0 0 12px; }
+  .add-form .dialog-actions { display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
+  .add-form .dialog-actions .tip { margin-right: auto; font-size: 12px; color: var(--subtle); }
+  @media (max-width: 560px) { .add-form .grid { grid-template-columns: 1fr; } }
+</style>
+<form method="post" action="/jobs/add" id="add-form" class="add-form">
+  <h2 id="add-title">Add job</h2>
+  {% if lookup %}
+    <p class="hint">Paste a link to fill in the details automatically, or type them in. For LinkedIn and SEEK, paste the job description yourself, or use the <a href="/bookmarklet" target="_blank">Add to Job Board bookmarklet</a>.</p>
+  {% else %}
+    <p class="hint" id="add-hint">Check the details below, then add the job.</p>
+  {% endif %}
+  <label>Link to posting
+    <span class="url-row">
+      <input name="url" type="url" placeholder="https://" autocomplete="off">
+      {% if lookup %}<button type="button" class="btn" id="lookup-btn">Fetch details</button>{% endif %}
+    </span>
+  </label>
+  <p class="lookup-status" id="lookup-status" role="status" hidden></p>
+  <div class="grid">
+    <label><span>Job title <span class="req">*</span></span><input name="title" required autocomplete="off"></label>
+    <label><span>Company <span class="req">*</span></span><input name="company" required autocomplete="off" list="company-list"></label>
+  </div>
+  <label>Location<input name="location" placeholder="e.g. Adelaide, SA (Hybrid)" autocomplete="off"></label>
+  <label>Job description<textarea name="description" rows="{{ 16 if standalone else 10 }}" placeholder="Paste the posting text here"></textarea></label>
+  <label class="check"><input type="checkbox" name="interested" value="true"> Put it in Interested and queue it for scoring</label>
+  <p class="form-error" id="add-error" role="alert" hidden></p>
+  <div class="dialog-actions">
+    {% if standalone %}
+      <a class="btn" href="/">Back to board</a>
+    {% else %}
+      <button type="button" class="btn" id="add-cancel">Cancel</button>
+    {% endif %}
+    <button type="submit" class="btn btn-primary">Add job</button>
+  </div>
+</form>

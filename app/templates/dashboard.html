@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Job Search Board</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --col-w: 280px;
+      --text: #172b4d;
+      --subtle: #626f86;
+      --border: #dcdfe4;
+      --column: #f1f2f4;
+      --card: #ffffff;
+      --brand: #0c66e4;
+      --brand-hover: #0055cc;
+      --nav: #ffffff;
+      --match-bg: #dcfff1; --match-fg: #216e4e;
+      --stretch-bg: #fff7d6; --stretch-fg: #7f5f01;
+      --unscored-bg: #f1f2f4; --unscored-fg: #44546f;
+      --nofit-bg: #ffeceb; --nofit-fg: #ae2e24;
+      --flag-bg: #e9f2ff; --flag-fg: #0055cc;
+      --done-bg: #dfd8fd; --done-fg: #5e4db2;
+      --shadow: 0 1px 1px rgba(9,30,66,.25), 0 0 1px rgba(9,30,66,.31);
+      --shadow-hover: 0 4px 8px -2px rgba(9,30,66,.25), 0 0 1px rgba(9,30,66,.31);
+    }
+    * { box-sizing: border-box; }
+    /* Our display rules (e.g. .card { display: block }) would otherwise beat
+       the browser's built-in [hidden] style, leaving filtered cards visible. */
+    [hidden] { display: none !important; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font: 14px/1.43 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      height: 100vh; display: flex; flex-direction: column;
+    }
+    a { color: var(--brand); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* Top navigation */
+    .topnav {
+      display: flex; align-items: center; gap: 12px; padding: 0 16px; height: 56px;
+      border-bottom: 1px solid var(--border); background: var(--nav); flex-shrink: 0;
+    }
+    .logo { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 16px; color: var(--text); }
+    .logo-mark {
+      width: 24px; height: 24px; border-radius: 4px; background: var(--brand); color: #fff;
+      display: grid; place-items: center; font-size: 13px; font-weight: 700;
+    }
+    .topnav .spacer { flex: 1; }
+
+    /* Board header */
+    .board-header { padding: 20px 24px 12px; flex-shrink: 0; }
+    .breadcrumbs { color: var(--subtle); font-size: 13px; margin-bottom: 4px; }
+    .title-row { display: flex; align-items: center; gap: 12px; }
+    h1 { font-size: 24px; font-weight: 600; margin: 0; flex: 1; }
+
+    .btn {
+      font: inherit; font-weight: 500; border: none; border-radius: 3px; padding: 6px 12px;
+      cursor: pointer; background: var(--column); color: var(--text); line-height: 20px;
+    }
+    .btn:hover { background: #dcdfe4; }
+    .btn-primary { background: var(--brand); color: #fff; }
+    .btn-primary:hover { background: var(--brand-hover); }
+    .btn[disabled] { opacity: .6; cursor: progress; }
+
+    .toolbar { display: flex; align-items: center; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+    .search {
+      position: relative; width: 220px;
+    }
+    .search input {
+      width: 100%; font: inherit; padding: 6px 8px 6px 30px; border: 2px solid var(--border);
+      border-radius: 3px; outline: none;
+    }
+    .search input:focus { border-color: var(--brand); }
+    .search svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--subtle); }
+    select.filter {
+      font: inherit; padding: 6px 8px; border: 2px solid var(--border); border-radius: 3px;
+      background: #fff; color: var(--text); max-width: 240px; text-overflow: ellipsis;
+    }
+    .chip {
+      font: inherit; font-size: 13px; border: 1px solid var(--border); background: #fff; color: var(--text);
+      border-radius: 3px; padding: 4px 10px; cursor: pointer;
+    }
+    .chip:hover { background: var(--column); }
+    .chip[aria-pressed="true"] { background: #e9f2ff; border-color: var(--brand); color: var(--brand-hover); }
+    .toolbar .divider { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+    .toolbar .count { color: var(--subtle); font-size: 13px; margin-left: auto; }
+
+    /* Board */
+    .board {
+      flex: 1; display: flex; gap: 8px; padding: 4px 24px 24px; overflow-x: auto; min-height: 0;
+    }
+    .column {
+      flex: 0 0 var(--col-w); width: var(--col-w); min-width: 0; max-width: var(--col-w); background: var(--column); border-radius: 6px;
+      display: flex; flex-direction: column; max-height: 100%;
+      transition: background .12s, box-shadow .12s;
+    }
+    .column.drag-over { background: #e9f2ff; box-shadow: inset 0 0 0 2px var(--brand); }
+    .column-header {
+      display: flex; align-items: center; gap: 8px; padding: 12px 12px 8px;
+      font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--subtle); letter-spacing: .02em;
+    }
+    .column-count {
+      background: #dcdfe4; color: var(--text); border-radius: 8px; padding: 0 6px; font-size: 11px;
+    }
+    .column-header .interview-dot { color: #8270db; font-size: 10px; }
+    .column-header .rejected-x { color: #c9372c; font-size: 12px; }
+    .column[data-status="rejected"] .card,
+    .column[data-status="not_interested"] .card { opacity: .85; }
+    .cards { padding: 0 8px 8px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; flex: 1; min-height: 60px; }
+    .column-empty { color: var(--subtle); font-size: 13px; text-align: center; padding: 16px 8px; border: 2px dashed #c1c7d0; border-radius: 4px; }
+    .cards:has(.card:not([hidden])) .column-empty { display: none; }
+
+    .card {
+      background: var(--card); border-radius: 4px; box-shadow: var(--shadow); padding: 10px 12px;
+      cursor: grab; display: block; color: inherit; position: relative; min-width: 0; flex-shrink: 0;
+      border-left: 3px solid transparent;
+    }
+    .card:hover { box-shadow: var(--shadow-hover); background: #fafbfc; text-decoration: none; }
+    .card.dragging { opacity: .4; }
+    .card.saving { opacity: .6; }
+    .card.score-match { border-left-color: #22a06b; }
+    .card.score-stretch { border-left-color: #e2b203; }
+    .card.score-no_fit { border-left-color: #f87168; }
+    .card-delete {
+      position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border: none; border-radius: 3px;
+      background: #fff; color: var(--subtle); cursor: pointer; display: grid; place-items: center;
+      opacity: 0; transition: opacity .1s;
+    }
+    .card:hover .card-delete, .card-delete:focus-visible { opacity: 1; }
+    .card-delete:hover { background: #ffeceb; color: #ae2e24; }
+    .card.has-delete .card-title { padding-right: 22px; }
+    .card-title { font-weight: 500; margin-bottom: 6px; overflow-wrap: anywhere; }
+    .card-company {
+      color: var(--subtle); font-size: 13px; overflow: hidden;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+    .card-labels { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+    .lozenge {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; border-radius: 3px;
+      padding: 0 4px; line-height: 16px; white-space: nowrap;
+    }
+    .lz-match { background: var(--match-bg); color: var(--match-fg); }
+    .lz-stretch { background: var(--stretch-bg); color: var(--stretch-fg); }
+    .lz-unscored { background: var(--unscored-bg); color: var(--unscored-fg); }
+    .lz-no_fit { background: var(--nofit-bg); color: var(--nofit-fg); }
+    .lz-flag { background: var(--flag-bg); color: var(--flag-fg); }
+    .lz-docs { background: var(--done-bg); color: var(--done-fg); }
+    .card-scores { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: -2px 0 8px; font-size: 11px; }
+    .crit {
+      border-radius: 3px; padding: 0 4px; line-height: 16px; color: var(--subtle);
+      background: var(--column); white-space: nowrap;
+    }
+    .crit b { color: var(--text); }
+    .crit-1 b, .crit-2 b { color: #ae2e24; }
+    .crit-3 b { color: #7f5f01; }
+    .crit-4 b, .crit-5 b { color: #216e4e; }
+    .crit-total { margin-left: auto; white-space: nowrap; font-weight: 700; font-size: 13px; color: var(--text); }
+    .crit-total small { font-weight: 400; color: var(--subtle); font-size: 10px; }
+    .card-footer { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--subtle); }
+    .card-key { font-weight: 600; letter-spacing: .02em; }
+    .card-loc { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+    .avatar {
+      width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+      font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+
+    .hidden-note { font-size: 12px; color: var(--subtle); padding: 0 12px 12px; }
+
+    .title-row form { margin: 0; }
+    dialog#add-dialog {
+      width: min(640px, calc(100vw - 32px)); border: none; border-radius: 8px; padding: 24px;
+      box-shadow: 0 8px 24px rgba(9,30,66,.25); color: var(--text);
+    }
+    dialog#add-dialog::backdrop { background: rgba(9,30,66,.45); }
+    .card.flash { animation: flash 2s ease-out; }
+    @keyframes flash { 0%, 30% { box-shadow: 0 0 0 3px var(--brand); } 100% { box-shadow: var(--shadow); } }
+    .toast {
+      position: fixed; bottom: 24px; left: 24px; background: #172b4d; color: #fff;
+      padding: 10px 16px; border-radius: 4px; box-shadow: var(--shadow-hover);
+      opacity: 0; transform: translateY(8px); transition: all .2s; pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: none; }
+    .toast.error { background: #ae2e24; }
+  </style>
+</head>
+<body>
+{% set nav = "board" %}{% include "_nav.html" %}
+
+  <section class="board-header">
+    <div class="breadcrumbs">Projects / Job Search</div>
+    <div class="title-row">
+      <h1>Job board</h1>
+      <form method="post" action="/fetch" id="fetch-form">
+        <button type="submit" class="btn">Fetch new postings</button>
+      </form>
+      <button type="button" class="btn btn-primary" id="add-open">+ Add job</button>
+    </div>
+
+    <div class="toolbar">
+      <label class="search">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="5"/><path d="m14 14-3.5-3.5"/></svg>
+        <input type="search" id="search" placeholder="Search board" aria-label="Search board">
+      </label>
+      <select class="filter" id="company-filter" aria-label="Filter by company">
+        <option value="">All companies</option>
+        {% for company in companies %}
+          <option value="{{ company }}">{{ company }}</option>
+        {% endfor %}
+      </select>
+      <div class="divider"></div>
+      <button type="button" class="chip" data-filter="match" aria-pressed="false">Match</button>
+      <button type="button" class="chip" data-filter="stretch" aria-pressed="false">Stretch</button>
+      <button type="button" class="chip" data-filter="no_fit" aria-pressed="false">No fit</button>
+      <button type="button" class="chip" data-filter="unscored" aria-pressed="false">Unscored</button>
+      <button type="button" class="chip" data-filter="needs-scoring" aria-pressed="false">Needs scoring</button>
+      <button type="button" class="chip" data-filter="needs-tailoring" aria-pressed="false">Needs tailoring</button>
+      <div class="divider"></div>
+      {% if show_closed %}
+        <a href="/">Hide passed</a>
+      {% else %}
+        <a href="/?show_closed=1">Show passed</a>
+      {% endif %}
+      <span class="count" id="visible-count">{{ total }} job{{ "" if total == 1 else "s" }}</span>
+    </div>
+  </section>
+
+  <main class="board" id="board">
+    {% for status, title in board_columns %}
+      {% set cards = columns[status] %}
+      <section class="column" data-status="{{ status }}">
+        <div class="column-header">
+          <span>{{ title }}</span>
+          <span class="column-count" data-count>{{ cards|length }}</span>
+          {% if status == "interviewing" %}<span class="interview-dot" title="In progress">&#9679;</span>{% endif %}
+          {% if status == "rejected" %}<span class="rejected-x" title="Employer said no">&#10005;</span>{% endif %}
+        </div>
+        <div class="cards">
+          {% for job in cards %}
+            {% set bucket = job.score_bucket if job.score_bucket in ("match", "stretch", "no_fit") else "unscored" %}
+            <a class="card has-delete score-{{ bucket }}" href="/job/{{ job.id }}" draggable="true"
+               data-id="{{ job.id }}"
+               data-company="{{ job.company }}"
+               data-score="{{ bucket }}"
+               data-needs-scoring="{{ 1 if job.needs_scoring else 0 }}"
+               data-needs-tailoring="{{ 1 if job.needs_tailoring else 0 }}"
+               data-search="{{ (job.title ~ ' ' ~ job.company ~ ' ' ~ (job.location or '') ~ ' ' ~ job.id)|lower }}">
+              <button type="button" class="card-delete" title="Delete job" aria-label="Delete job"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2.5 4h11M6 4V2.5h4V4M4 4l.7 9.5h6.6L12 4M6.8 7v4M9.2 7v4"/></svg></button>
+              <div class="card-title">{{ job.title }}</div>
+              <div class="card-company" title="{{ job.company }}">{{ job.company }}</div>
+              <div class="card-labels">
+                <span class="lozenge lz-{{ bucket }}">{{ bucket|replace("_", " ") }}</span>
+                {% if job.needs_scoring %}<span class="lozenge lz-flag">needs scoring</span>{% endif %}
+                {% if job.needs_tailoring %}<span class="lozenge lz-flag">needs tailoring</span>{% endif %}
+                {% if job.tailored_resume_path %}<span class="lozenge lz-docs">tailored</span>{% endif %}
+              </div>
+              {% if job.score_total is not none %}
+                <div class="card-scores">
+                  {% for key, short, label in criteria %}
+                    {% set v = job.criteria_scores.get(key) %}
+                    {% if v %}
+                      <span class="crit crit-{{ v }}" title="{{ label }}: {{ v }}/5{% if key == 'salary' and job.salary_estimate %} ({{ job.salary_estimate }}){% endif %}">{{ short }} <b>{{ v }}</b></span>
+                    {% else %}
+                      <span class="crit" title="{{ label }}: not scored yet">{{ short }} <b>–</b></span>
+                    {% endif %}
+                  {% endfor %}
+                  <span class="crit-total" title="Total out of {{ job.score_max }}{% if job.score_missing %} ({{ job.score_missing|join(', ') }} not scored){% endif %}">{{ job.score_total }}<small>/{{ job.score_max }}</small></span>
+                </div>
+              {% endif %}
+              <div class="card-footer">
+                <span class="card-key">{{ job.id[:8]|upper }}</span>
+                <span class="card-loc" title="{{ job.location or '' }}">{{ job.location or "" }}</span>
+                <span class="avatar" data-avatar="{{ job.company }}" title="{{ job.company }}">{{ job.company[:2]|upper }}</span>
+              </div>
+            </a>
+          {% endfor %}
+          <div class="column-empty">
+            {% if status == "passed" and not show_closed %}Drop here to pass{% else %}No jobs{% endif %}
+          </div>
+        </div>
+        {% if status == "passed" and not show_closed %}
+          <div class="hidden-note">Passed jobs are hidden. <a href="/?show_closed=1">Show</a></div>
+        {% endif %}
+      </section>
+    {% endfor %}
+  </main>
+
+  <dialog id="add-dialog" aria-labelledby="add-title">
+    {% set lookup = true %}{% set standalone = false %}
+    {% include "_add_job_form.html" %}
+  </dialog>
+  <datalist id="company-list">
+    {% for company in companies %}<option value="{{ company }}">{% endfor %}
+  </datalist>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+  (function () {
+    const SHOW_CLOSED = {{ "true" if show_closed else "false" }};
+    const board = document.getElementById("board");
+    const cards = () => Array.from(board.querySelectorAll(".card"));
+    const toastEl = document.getElementById("toast");
+    let toastTimer;
+
+    function toast(msg, isError) {
+      toastEl.textContent = msg;
+      toastEl.classList.toggle("error", !!isError);
+      toastEl.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2500);
+    }
+
+    // Stable colour per company for the avatar bubble.
+    const palette = ["#0c66e4", "#1f845a", "#a54800", "#6e5dc6", "#c9372c", "#206a83", "#943d73", "#5b7f24"];
+    document.querySelectorAll("[data-avatar]").forEach(el => {
+      let h = 0;
+      for (const ch of el.dataset.avatar) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+      el.style.background = palette[h % palette.length];
+    });
+
+    // ---- Filtering -------------------------------------------------------
+    const search = document.getElementById("search");
+    const company = document.getElementById("company-filter");
+    const chips = Array.from(document.querySelectorAll(".chip"));
+    const countEl = document.getElementById("visible-count");
+
+    function matches(card) {
+      const q = search.value.trim().toLowerCase();
+      if (q && !card.dataset.search.includes(q)) return false;
+      if (company.value && card.dataset.company !== company.value) return false;
+      const active = chips.filter(c => c.getAttribute("aria-pressed") === "true").map(c => c.dataset.filter);
+      const scores = active.filter(f => ["match", "stretch", "no_fit", "unscored"].includes(f));
+      if (scores.length && !scores.includes(card.dataset.score)) return false;
+      if (active.includes("needs-scoring") && card.dataset.needsScoring !== "1") return false;
+      if (active.includes("needs-tailoring") && card.dataset.needsTailoring !== "1") return false;
+      return true;
+    }
+
+    function refresh() {
+      let visible = 0;
+      cards().forEach(card => {
+        const show = matches(card);
+        card.hidden = !show;
+        if (show) visible++;
+      });
+      board.querySelectorAll(".column").forEach(col => {
+        col.querySelector("[data-count]").textContent =
+          col.querySelectorAll(".card:not([hidden])").length;
+      });
+      countEl.textContent = visible + " job" + (visible === 1 ? "" : "s");
+    }
+
+    search.addEventListener("input", refresh);
+    company.addEventListener("change", refresh);
+    chips.forEach(chip => chip.addEventListener("click", () => {
+      chip.setAttribute("aria-pressed", chip.getAttribute("aria-pressed") === "true" ? "false" : "true");
+      refresh();
+    }));
+    document.addEventListener("keydown", e => {
+      const typing = e.target.closest("input, textarea, select, [contenteditable]");
+      if (e.key === "/" && !typing) { e.preventDefault(); search.focus(); }
+    });
+
+    // ---- Drag and drop ---------------------------------------------------
+    let dragged = null;
+
+    board.addEventListener("dragstart", e => {
+      const card = e.target.closest(".card");
+      if (!card) return;
+      dragged = card;
+      card.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", card.dataset.id);
+    });
+    board.addEventListener("dragend", () => {
+      if (dragged) dragged.classList.remove("dragging");
+      dragged = null;
+      board.querySelectorAll(".drag-over").forEach(c => c.classList.remove("drag-over"));
+    });
+    board.querySelectorAll(".column").forEach(col => {
+      col.addEventListener("dragover", e => {
+        if (!dragged) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        col.classList.add("drag-over");
+      });
+      col.addEventListener("dragleave", e => {
+        if (!col.contains(e.relatedTarget)) col.classList.remove("drag-over");
+      });
+      col.addEventListener("drop", e => {
+        e.preventDefault();
+        col.classList.remove("drag-over");
+        if (dragged) moveCard(dragged, col);
+      });
+    });
+
+    async function moveCard(card, col) {
+      const from = card.closest(".column");
+      const status = col.dataset.status;
+      if (from === col) return;
+      const nextSibling = card.nextSibling;
+      const list = col.querySelector(".cards");
+      list.insertBefore(card, list.querySelector(".column-empty"));
+      card.classList.add("saving");
+      refresh();
+      try {
+        const resp = await fetch(`/job/${encodeURIComponent(card.dataset.id)}/status`, {
+          method: "POST",
+          headers: { "Accept": "application/json" },
+          body: new URLSearchParams({ status }),
+        });
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        const data = await resp.json();
+        const title = col.querySelector(".column-header span").textContent;
+        const newlyFlagged = data.needs_scoring && card.dataset.needsScoring !== "1";
+        if (newlyFlagged) {
+          card.dataset.needsScoring = "1";
+          const label = document.createElement("span");
+          label.className = "lozenge lz-flag";
+          label.textContent = "needs scoring";
+          card.querySelector(".card-labels .lozenge").after(label);
+          refresh();
+        }
+        toast(newlyFlagged ? `Moved to ${title} · queued for scoring` : `Moved to ${title}`);
+        if (status === "passed" && !SHOW_CLOSED) {
+          card.remove();
+          refresh();
+        }
+      } catch (err) {
+        from.querySelector(".cards").insertBefore(card, nextSibling);
+        refresh();
+        toast("Couldn't update status: " + err.message, true);
+      } finally {
+        card.classList.remove("saving");
+      }
+    }
+
+    // ---- Delete -------------------------------------------------------------
+    board.addEventListener("click", async e => {
+      const btn = e.target.closest(".card-delete");
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const card = btn.closest(".card");
+      const title = card.querySelector(".card-title").textContent.trim();
+      const company = card.dataset.company;
+      if (!confirm(`Delete "${title}" at ${company}?\n\nIts folder (posting and any tailored documents) moves to jobs/.trash/, and fetch won't add it again.`)) return;
+      card.classList.add("saving");
+      try {
+        const resp = await fetch(`/job/${encodeURIComponent(card.dataset.id)}/delete`, {
+          method: "POST", headers: { "Accept": "application/json" },
+        });
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        card.remove();
+        refresh();
+        toast("Job deleted");
+      } catch (err) {
+        card.classList.remove("saving");
+        toast("Couldn't delete job: " + err.message, true);
+      }
+    });
+
+    // ---- Add job ---------------------------------------------------------
+    const addDialog = document.getElementById("add-dialog");
+    const addForm = document.getElementById("add-form");
+    const addError = document.getElementById("add-error");
+    document.getElementById("add-open").addEventListener("click", () => {
+      addError.hidden = true;
+      lookupStatus.hidden = true;
+      addDialog.showModal();
+      addForm.elements.url.focus();
+    });
+    document.getElementById("add-cancel").addEventListener("click", () => addDialog.close());
+
+    // Fill the form from a job link.
+    const lookupBtn = document.getElementById("lookup-btn");
+    const lookupStatus = document.getElementById("lookup-status");
+    function showLookup(msg, kind, html) {
+      lookupStatus.className = "lookup-status " + (kind || "");
+      if (html) lookupStatus.innerHTML = msg; else lookupStatus.textContent = msg;
+      lookupStatus.hidden = false;
+    }
+    async function lookupLink() {
+      const url = addForm.elements.url.value.trim();
+      if (!url) { showLookup("Paste a link first.", "error"); return; }
+      lookupBtn.disabled = true;
+      showLookup("Fetching details…");
+      try {
+        const resp = await fetch("/jobs/lookup?url=" + encodeURIComponent(url));
+        const data = await resp.json();
+        if (data.existing) {
+          showLookup('That link is already on the board. <a href="/job/' + encodeURIComponent(data.existing) + '">Open it</a>', "warn", true);
+          return;
+        }
+        if (!resp.ok) { showLookup(data.error || "Couldn't read that link.", "error"); return; }
+        const f = addForm.elements;
+        for (const key of ["title", "company", "location", "description"]) {
+          if (data[key]) f[key].value = data[key];
+        }
+        showLookup(data.partial
+          ? "Only found the page title. Check the details and paste the description."
+          : "Details filled in. Check them before adding.", data.partial ? "warn" : "ok");
+      } catch (err) {
+        showLookup("Couldn't read that link: " + err.message, "error");
+      } finally {
+        lookupBtn.disabled = false;
+      }
+    }
+    lookupBtn.addEventListener("click", lookupLink);
+    addForm.elements.url.addEventListener("paste", () => {
+      // Auto-fetch when pasting into an otherwise empty form.
+      setTimeout(() => { if (!addForm.elements.title.value) lookupLink(); }, 0);
+    });
+    addForm.elements.url.addEventListener("keydown", e => {
+      if (e.key === "Enter") { e.preventDefault(); lookupLink(); }
+    });
+    addForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const submit = addForm.querySelector('button[type="submit"]');
+      submit.disabled = true;
+      addError.hidden = true;
+      try {
+        const resp = await fetch("/jobs/add", {
+          method: "POST", headers: { "Accept": "application/json" }, body: new FormData(addForm),
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || "HTTP " + resp.status);
+        if (!data.created) {
+          addError.innerHTML = 'That link is already on the board. <a href="/job/' + data.id + '">Open it</a>';
+          addError.hidden = false;
+          return;
+        }
+        sessionStorage.setItem("jsb-added", data.id);
+        location.reload();
+      } catch (err) {
+        addError.textContent = "Couldn't add the job: " + err.message;
+        addError.hidden = false;
+      } finally {
+        submit.disabled = false;
+      }
+    });
+    const added = sessionStorage.getItem("jsb-added");
+    if (added) {
+      sessionStorage.removeItem("jsb-added");
+      const card = board.querySelector(`.card[data-id="${CSS.escape(added)}"]`);
+      if (card) {
+        card.scrollIntoView({ block: "nearest", inline: "nearest" });
+        card.classList.add("flash");
+      }
+      toast("Job added");
+    }
+
+    // ---- Fetch button feedback ------------------------------------------
+    document.getElementById("fetch-form").addEventListener("submit", e => {
+      const btn = e.target.querySelector("button");
+      btn.disabled = true;
+      btn.textContent = "Fetching…";
+    });
+
+    refresh();
+  })();
+  </script>
+</body>
+</html>

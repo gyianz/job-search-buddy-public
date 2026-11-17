@@ -1,0 +1,14 @@
+# Tooling
+.venv/
+__pycache__/
+.pytest_cache/
+.DS_Store
+
+# Your personal job-search data. Ignored so it can never end up in a public
+# repo by accident. If your copy of this repo is PRIVATE and you'd like a
+# history of these files, delete the lines below.
+data/
+jobs/
+profile/profile.md
+profile/rubric.json
+seed_companies.json

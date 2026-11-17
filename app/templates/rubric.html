@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include "_page_head.html" %}
+  {% include "_wide_page.html" %}
+  <title>Scoring rubric - Job Search Buddy</title>
+  <style>
+    .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+    .step { border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; display: flex; flex-direction: column; }
+    .step-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .step-num { width: 22px; height: 22px; border-radius: 50%; background: var(--column); display: grid; place-items: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+    .step h3 { font-size: 14px; margin: 0; flex: 1; }
+    .step .sub { margin: 0 0 8px; }
+    .lz-no_fit { background: #ffeceb; color: #ae2e24; }
+    .lz-match { background: #dcfff1; color: #216e4e; }
+    .lz-stretch { background: #fff7d6; color: #7f5f01; }
+    .rules { list-style: none; padding: 0; margin: 0; flex: 1; }
+    .rules li { display: flex; gap: 6px; align-items: flex-start; padding: 6px 0; border-top: 1px solid var(--border); font-size: 13px; }
+    .rules li:first-child { border-top: none; }
+    .rules li div { flex: 1; }
+    .rules .detail { color: var(--subtle); font-size: 12px; }
+    .x { border: none; background: none; color: var(--subtle); cursor: pointer; border-radius: 3px; padding: 0 5px; font-size: 16px; line-height: 20px; }
+    .x:hover { background: #ffeceb; color: #ae2e24; }
+    details.add { margin-top: 10px; }
+    details.add > summary { list-style: none; cursor: pointer; display: block; text-align: center; font-weight: 500; font-size: 13px; color: var(--brand); border: 2px dashed #b3d4ff; border-radius: 4px; padding: 6px 10px; }
+    details.add > summary:hover { background: #e9f2ff; border-color: var(--brand); }
+    details.add > summary::-webkit-details-marker { display: none; }
+    details.add[open] > summary { border-style: solid; background: #e9f2ff; }
+    details.add form.rule-form { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+    .form-error { background: #ffeceb; color: #ae2e24; border-radius: 4px; padding: 6px 10px; font-size: 13px; }
+    .req { color: #ae2e24; }
+    .form-actions { display: flex; gap: 8px; align-items: center; }
+    @keyframes flash { from { background: #fff7d6; box-shadow: 0 0 0 3px #f5cd47; } to { background: transparent; box-shadow: none; } }
+    .just-added { animation: flash 3s ease-out; scroll-margin-top: 80px; }
+    .crit.just-added { animation-name: flash; }
+    /* Inline editing: .editable shows .view, or .edit-form when .editing. */
+    .editable .edit-form { display: none; }
+    .editable.editing .edit-form { display: flex; }
+    .editable.editing .view, .editable.editing .view-only { display: none; }
+    .edit-form { flex-direction: column; gap: 6px; flex: 1; }
+    .icon-btn { border: none; background: none; color: var(--subtle); cursor: pointer; border-radius: 3px; padding: 0 5px; font-size: 13px; line-height: 20px; }
+    .icon-btn:hover { background: var(--column); color: var(--text); }
+    .rules li.editable.editing { background: #f7f8f9; margin: 0 -8px; padding: 8px; border-radius: 4px; }
+    .crit.editing { border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand); }
+    .crit .edit-form .levels { grid-template-columns: 22px 1fr; }
+    .crit .edit-form { margin-top: 8px; }
+    .rationale.editable { padding: 4px 16px 12px; }
+    .rationale .edit-form textarea { min-height: 180px; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    h2.sec { margin: 32px 0 4px; display: flex; align-items: center; gap: 8px; }
+    .criteria { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin-top: 12px; }
+    .crit { border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; }
+    .crit-head { display: flex; align-items: center; gap: 8px; }
+    .crit-head h3 { margin: 0; font-size: 14px; flex: 1; }
+    .crit .short { font-size: 11px; font-weight: 700; background: var(--column); border-radius: 3px; padding: 0 5px; }
+    .crit .desc { color: var(--subtle); font-size: 12px; margin: 4px 0 8px; }
+    .crit .notes { font-size: 12px; background: #fafbfc; border-left: 3px solid var(--border); padding: 4px 8px; margin-bottom: 8px; }
+    .scale { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .scale td { padding: 4px 6px; border-top: 1px solid var(--border); vertical-align: top; }
+    .scale td:first-child { width: 22px; font-weight: 700; text-align: center; }
+    .s5, .s4 { color: #216e4e; } .s3 { color: #7f5f01; } .s2, .s1 { color: #ae2e24; }
+    .crit code { font-size: 11px; }
+    .card { border: 1px solid var(--border); border-radius: 6px; padding: 16px 20px; margin-top: 16px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr 120px; gap: 12px 16px; margin-top: 12px; }
+    .grid .full { grid-column: 1 / -1; }
+    .levels { display: grid; grid-template-columns: 28px 1fr; gap: 6px 8px; align-items: center; }
+    .levels span { font-weight: 700; text-align: center; }
+    .rationale { border: 1px solid var(--border); border-radius: 6px; padding: 4px 16px; margin-top: 12px; font-size: 13px; }
+    .rationale ol { padding-left: 20px; }
+    .warn { background: #fff7d6; color: #7f5f01; border-radius: 6px; padding: 10px 14px; margin-top: 16px; font-size: 13px; display: flex; align-items: center; gap: 12px; }
+    .warn form { margin-left: auto; }
+    @media (max-width: 860px) { .flow { grid-template-columns: 1fr; } .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  {% include "_nav.html" %}
+  <div class="page wide">
+    <div class="page-head">
+      <div>
+        <div class="breadcrumbs">Job Search / Rubric</div>
+        <h1>Scoring rubric</h1>
+        <div class="sub">The instructions Claude follows when it judges each posting · saved in <code>{{ path }}</code></div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>How judging works.</strong> When you ask Claude to process the scoring queue, it runs
+      <code>app.cli rubric</code> to read these rules, reads your <a href="/profile">profile</a> and the posting,
+      then records a bucket, a 1–5 score per criterion and a rationale with <code>app.cli score</code>.
+      Changes here apply to the next job scored; already-scored jobs keep their scores until re-scored.
+    </div>
+
+    {% if error and not form_id %}<div class="flash err">{{ error }}</div>{% endif %}
+    {% if notice %}<div class="flash ok">{{ notice }}</div>{% endif %}
+
+    {% if incomplete %}
+      <div class="warn">
+        <span><strong>{{ incomplete }}</strong> of {{ scored }} scored job{{ "" if scored == 1 else "s" }} {{ "is" if incomplete == 1 else "are" }} missing a score for at least one current criterion{% if incomplete_queued %} ({{ incomplete_queued }} already queued){% endif %}.</span>
+        {% if incomplete > incomplete_queued %}
+          <form method="post" action="/rubric/requeue"><button class="btn" type="submit">Queue them for re-scoring</button></form>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <h2 class="sec">Bucket rules</h2>
+    <div class="sub">Applied in order; the first step that decides it wins. Borderline calls go to the lower bucket.</div>
+    <div class="flow">
+      {% set buckets = {"deal_breakers": ("no_fit", "Any one of these makes a job no fit, however good the rest looks."),
+                        "match_families": ("match", "Passed step 1 and is one of these role families, at the right level."),
+                        "stretch_examples": ("stretch", "Anything else that passed step 1, including:")} %}
+      {% for list_key, heading in rule_lists %}
+        {% set bucket, intro = buckets[list_key] %}
+        <section class="step">
+          <div class="step-head">
+            <span class="step-num">{{ loop.index }}</span>
+            <h3>{{ heading.split(" → ")[0] }}</h3>
+            <span class="lozenge lz-{{ bucket }}">{{ bucket|replace("_", " ") }}</span>
+          </div>
+          <p class="sub">{{ intro }}</p>
+          <ul class="rules">
+            {% for rule in rubric[list_key] %}
+              {% set anchor = "rule-" ~ list_key ~ "-" ~ loop.index0 %}
+              {% set efid = "edit-rule-" ~ list_key ~ "-" ~ loop.index0 %}
+              {% set ef = form if form_id == efid else rule %}
+              <li id="{{ anchor }}" class="editable {% if added == anchor %}just-added{% endif %} {% if form_id == efid %}editing{% endif %}">
+                <div class="view"><strong>{{ rule.title }}</strong>{% if rule.detail %}<div class="detail">{{ rule.detail }}</div>{% endif %}</div>
+                <form method="post" action="/rubric/rules/{{ list_key }}/{{ loop.index0 }}/edit" class="edit-form">
+                  {% if form_id == efid and error %}<div class="form-error" role="alert">{{ error }}</div>{% endif %}
+                  <input type="hidden" name="original_title" value="{{ rule.title }}">
+                  <input type="text" name="title" required value="{{ ef.title }}" aria-label="Title">
+                  <textarea name="detail" rows="3" aria-label="Details" placeholder="Details (optional)">{{ ef.detail }}</textarea>
+                  <div class="form-actions">
+                    <button class="btn btn-primary btn-sm" type="submit">Save</button>
+                    <button class="btn btn-sm" type="button" data-cancel>Cancel</button>
+                  </div>
+                </form>
+                <button type="button" class="icon-btn view-only" data-edit title="Edit" aria-label="Edit {{ rule.title }}">&#9998;</button>
+                <form class="view-only" method="post" action="/rubric/rules/{{ list_key }}/remove" data-title="{{ rule.title }}"
+                      onsubmit="return confirm('Remove “' + this.dataset.title + '” from the rubric?')">
+                  <input type="hidden" name="index" value="{{ loop.index0 }}">
+                  <input type="hidden" name="title" value="{{ rule.title }}">
+                  <button type="submit" class="x" title="Remove" aria-label="Remove {{ rule.title }}">&times;</button>
+                </form>
+              </li>
+            {% else %}
+              <li class="empty">None yet.</li>
+            {% endfor %}
+          </ul>
+          {% set fid = "add-" ~ list_key %}
+          {% set noun = "deal-breaker" if list_key == "deal_breakers" else "role family" if list_key == "match_families" else "stretch example" %}
+          <details class="add" id="{{ fid }}" {% if form_id == fid %}open{% endif %}>
+            <summary>+ Add {{ noun }}</summary>
+            <form method="post" action="/rubric/rules/{{ list_key }}/add" class="rule-form">
+              {% if form_id == fid and error %}<div class="form-error" role="alert">{{ error }}</div>{% endif %}
+              <label class="field"><span>Title <span class="req">*</span></span>
+                <input type="text" name="title" required value="{{ form.title if form_id == fid else '' }}"
+                       placeholder="{{ 'e.g. Requires security clearance' if list_key == 'deal_breakers' else 'e.g. ML platform engineering' if list_key == 'match_families' else 'e.g. Data engineering with an ML focus' }}"></label>
+              <label class="field"><span>Details (optional)</span>
+                <textarea name="detail" rows="2" placeholder="What counts, examples…">{{ form.detail if form_id == fid else '' }}</textarea></label>
+              <div class="form-actions"><button class="btn btn-primary btn-sm" type="submit">Add {{ noun }}</button></div>
+            </form>
+          </details>
+        </section>
+      {% endfor %}
+    </div>
+
+    <h2 class="sec">Criteria <span class="lozenge">{{ rubric.criteria|length }} × 1–5 = out of {{ 5 * rubric.criteria|length }}</span>
+      <a class="btn btn-primary btn-sm" href="#add-criterion" style="margin-left:auto" data-open="add-criterion">+ Add criterion</a></h2>
+    <div class="sub">Scored for every job (including no-fit ones) to rank jobs within a bucket. Higher is always better for you.</div>
+    <div class="criteria">
+      {% for c in rubric.criteria %}
+        {% set efid = "edit-crit-" ~ c.key %}
+        {% set ef = form if form_id == efid else c %}
+        <section class="crit editable {% if added == 'crit-' ~ c.key %}just-added{% endif %} {% if form_id == efid %}editing{% endif %}" id="crit-{{ c.key }}">
+          <div class="crit-head">
+            <span class="short" title="Label on board cards">{{ c.short }}</span>
+            <h3>{{ c.label }}</h3>
+            <button type="button" class="icon-btn view-only" data-edit title="Edit" aria-label="Edit {{ c.label }}">&#9998; Edit</button>
+            <form class="view-only" method="post" action="/rubric/criteria/{{ c.key }}/remove" data-label="{{ c.label }}"
+                  onsubmit="return confirm('Remove the “' + this.dataset.label + '” criterion?\n\nIt stops counting toward job totals. Scores already given for it are kept, so re-adding it with the same key brings them back.')">
+              <button type="submit" class="x" title="Remove criterion" aria-label="Remove {{ c.label }}">&times;</button>
+            </form>
+          </div>
+          <div class="view">
+            <div class="desc">{{ c.description }} <code>--{{ c.key }}</code></div>
+            {% if c.notes %}<div class="notes">{{ c.notes }}</div>{% endif %}
+            <table class="scale">
+              {% for level in c.levels %}{% set score = 5 - loop.index0 %}
+                <tr><td class="s{{ score }}">{{ score }}</td><td>{{ level }}</td></tr>
+              {% endfor %}
+            </table>
+          </div>
+          <form method="post" action="/rubric/criteria/{{ c.key }}/edit" class="edit-form">
+            {% if form_id == efid and error %}<div class="form-error" role="alert">{{ error }}</div>{% endif %}
+            <div class="field"><label>Name <span class="req">*</span></label><input type="text" name="label" required value="{{ ef.label }}"></div>
+            <div class="field"><label>Card label</label><input type="text" name="short" maxlength="4" value="{{ ef.short }}"></div>
+            <div class="field"><label>What it measures</label><input type="text" name="description" value="{{ ef.description }}"></div>
+            <div class="field"><label>What each score means <span class="req">*</span></label>
+              <div class="levels">
+                {% for score in [5, 4, 3, 2, 1] %}
+                  <span class="s{{ score }}">{{ score }}</span><input type="text" name="level{{ score }}" required aria-label="Score {{ score }} means"
+                    value="{{ form['level' ~ score] if form_id == efid else c.levels[5 - score] }}">
+                {% endfor %}
+              </div>
+            </div>
+            <div class="field"><label>Extra guidance</label><textarea name="notes" rows="3">{{ ef.notes }}</textarea></div>
+            <div class="hint">Key <code>--{{ c.key }}</code> can't change: scores are stored against it. To rename it, add a new criterion and remove this one.</div>
+            <div class="form-actions">
+              <button class="btn btn-primary btn-sm" type="submit">Save</button>
+              <button class="btn btn-sm" type="button" data-cancel>Cancel</button>
+            </div>
+          </form>
+        </section>
+      {% else %}
+        <p class="empty">No criteria. Jobs will only get a bucket.</p>
+      {% endfor %}
+    </div>
+
+    {% set cf = form if form_id == "add-criterion" else {} %}
+    <section class="card">
+      <details class="add" id="add-criterion" {% if form_id == "add-criterion" %}open{% endif %}>
+        <summary>+ Add criterion</summary>
+        <form method="post" action="/rubric/criteria/add">
+          {% if form_id == "add-criterion" and error %}<div class="form-error" role="alert" style="margin-top:12px">{{ error }}</div>{% endif %}
+          <div class="grid">
+            <div class="field"><label for="c-label">Name <span class="req">*</span></label><input type="text" id="c-label" name="label" required value="{{ cf.label or '' }}" placeholder="e.g. Company stability"></div>
+            <div class="field"><label for="c-key">Key <span class="req">*</span></label><input type="text" id="c-key" name="key" required value="{{ cf.key or '' }}" pattern="[a-z][a-z0-9_]{0,23}" title="Lowercase letters, digits and _; must start with a letter" placeholder="filled in from the name">
+              <span class="hint">Becomes <code>--<span id="key-echo">{{ cf.key or "key" }}</span></code> on the score command.</span></div>
+            <div class="field"><label for="c-short">Card label</label><input type="text" id="c-short" name="short" maxlength="4" value="{{ cf.short or '' }}" placeholder="auto"></div>
+            <div class="field full"><label for="c-desc">What it measures</label><input type="text" id="c-desc" name="description" value="{{ cf.description or '' }}" placeholder="e.g. How likely the company is to still be hiring and funded in a year (more stable is better)."></div>
+            <div class="field full"><label>What each score means <span class="req">*</span> <span class="hint">(all five)</span></label>
+              <div class="levels">
+                {% for score in [5, 4, 3, 2, 1] %}
+                  <span class="s{{ score }}">{{ score }}</span><input type="text" name="level{{ score }}" required value="{{ cf['level' ~ score] or '' }}" aria-label="Score {{ score }} means" placeholder="{{ 'Best for you, e.g. profitable and growing' if score == 5 else 'Worst for you, e.g. recent layoffs' if score == 1 else 'What earns a ' ~ score ~ '?' }}">
+                {% endfor %}
+              </div>
+            </div>
+            <div class="field full"><label for="c-notes">Extra guidance (optional)</label><textarea id="c-notes" name="notes" rows="2" placeholder="How to score when the posting is silent, what to exclude, etc.">{{ cf.notes or '' }}</textarea></div>
+          </div>
+          <div class="form-actions" style="margin-top: 12px"><button class="btn btn-primary" type="submit">Add criterion</button></div>
+        </form>
+      </details>
+    </section>
+
+    <section class="editable {% if added == 'rationale' %}just-added{% endif %}" id="rationale">
+      <h2 class="sec">Writing the rationale
+        <button type="button" class="icon-btn view-only" data-edit style="margin-left:auto">&#9998; Edit</button></h2>
+      <div class="rationale editable-body">
+        <div class="view">{{ rationale_html|safe if rationale_html else '<p class="empty">No guide yet.</p>'|safe }}</div>
+        <form method="post" action="/rubric/rationale" class="edit-form">
+          <textarea name="rationale_guide" aria-label="Rationale guide">{{ rubric.rationale_guide }}</textarea>
+          <div class="hint">Markdown: blank line between paragraphs, <code>1.</code> or <code>-</code> for lists, <code>**bold**</code>.</div>
+          <div class="form-actions">
+            <button class="btn btn-primary btn-sm" type="submit">Save</button>
+            <button class="btn btn-sm" type="button" data-cancel>Cancel</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+  <script>
+  (function () {
+    const label = document.getElementById("c-label"), key = document.getElementById("c-key");
+    const short = document.getElementById("c-short"), echo = document.getElementById("key-echo");
+    let keyTouched = !!key.value, shortTouched = !!short.value;
+    key.addEventListener("input", () => { keyTouched = true; echo.textContent = key.value || "key"; });
+    short.addEventListener("input", () => { shortTouched = true; });
+    label.addEventListener("input", () => {
+      if (!keyTouched) {
+        key.value = label.value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^[^a-z]+|_+$/g, "").slice(0, 24);
+        echo.textContent = key.value || "key";
+      }
+      if (!shortTouched) short.value = label.value.replace(/[^A-Za-z]/g, "").slice(0, 3);
+    });
+    // "+ Add criterion" in the heading opens the form and focuses it.
+    document.querySelectorAll("[data-open]").forEach(a => a.addEventListener("click", e => {
+      e.preventDefault();
+      const d = document.getElementById(a.dataset.open);
+      d.open = true; d.scrollIntoView({ behavior: "smooth", block: "start" });
+      setTimeout(() => d.querySelector("input:not([type=hidden])").focus(), 300);
+    }));
+    // Opening any add form focuses its first field.
+    document.querySelectorAll("details.add").forEach(d => d.addEventListener("toggle", () => {
+      if (d.open) d.querySelector("input:not([type=hidden])").focus({ preventScroll: true });
+    }));
+    // Inline edit: Edit swaps the view for its form; Cancel restores it.
+    document.querySelectorAll("[data-edit]").forEach(btn => btn.addEventListener("click", () => {
+      const box = btn.closest(".editable");
+      box.classList.add("editing");
+      const field = box.querySelector(".edit-form input:not([type=hidden]), .edit-form textarea");
+      if (field) field.focus();
+    }));
+    document.querySelectorAll("[data-cancel]").forEach(btn => btn.addEventListener("click", () => {
+      const form = btn.closest("form");
+      form.reset();
+      const err = form.querySelector(".form-error");
+      if (err) err.remove();
+      form.closest(".editable").classList.remove("editing");
+    }));
+    // A rejected add or edit: bring its form (still filled in) into view.
+    const failed = document.querySelector("details.add[open] .form-error, .editing .form-error");
+    if (failed) failed.closest("details, .editable").scrollIntoView({ block: "center" });
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include "_page_head.html" %}
+  {% include "_wide_page.html" %}
+  <title>Job boards - Job Search Buddy</title>
+  <style>
+    .stats { display: flex; gap: 8px; flex-wrap: wrap; margin: 20px 0 8px; }
+    .stat { background: var(--column); border-radius: 6px; padding: 10px 14px; min-width: 110px; }
+    .stat b { display: block; font-size: 20px; line-height: 1.2; }
+    .stat span { color: var(--subtle); font-size: 12px; }
+    .stat.total { background: #e9f2ff; }
+    .stat.total b { color: var(--brand); }
+    .stat.zero b { color: #a5adba; }
+    table.boards { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
+    table.boards th { text-align: left; color: var(--subtle); font-weight: 600; font-size: 12px; padding: 8px; border-bottom: 2px solid var(--border); }
+    table.boards td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    table.boards tr:hover td { background: #fafbfc; }
+    .kw { display: inline-block; background: var(--column); border-radius: 3px; padding: 0 5px; margin: 1px 2px 1px 0; font-size: 12px; white-space: pre; }
+    .any { color: var(--subtle); font-size: 12px; }
+    .card { border: 1px solid var(--border); border-radius: 6px; padding: 16px 20px; margin-top: 24px; }
+    .card h2 { margin: 0 0 4px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; margin-top: 12px; }
+    .grid .full { grid-column: 1 / -1; }
+    .actions { display: flex; gap: 8px; align-items: center; margin-top: 16px; }
+    #test-result { font-size: 13px; }
+    #test-result.ok { color: #216e4e; }
+    #test-result.err { color: #ae2e24; }
+    #test-result ul { margin: 4px 0 0; padding-left: 18px; color: var(--text); }
+    details.howto { margin-top: 12px; font-size: 13px; }
+    details.howto summary { cursor: pointer; color: var(--brand); }
+    details.howto table { border-collapse: collapse; margin-top: 8px; }
+    details.howto td, details.howto th { border: 1px solid var(--border); padding: 4px 8px; text-align: left; }
+  </style>
+</head>
+<body>
+  {% include "_nav.html" %}
+  <div class="page wide">
+    <div class="page-head">
+      <div>
+        <div class="breadcrumbs">Job Search / Job boards</div>
+        <h1>Job board connections</h1>
+        <div class="sub">Company career boards that <em>Fetch new postings</em> pulls from · saved in <code>{{ path }}</code></div>
+      </div>
+      <a class="btn btn-primary" href="#add">+ Connect a board</a>
+    </div>
+
+    {% if error %}<div class="flash err">{{ error }}</div>{% endif %}
+    {% if added %}<div class="flash ok">Connected {{ added }}. Its postings arrive on the next <em>Fetch new postings</em> from the <a href="/">board</a>.</div>{% endif %}
+    {% if removed %}<div class="flash ok">Disconnected {{ removed }}. Jobs already fetched from it stay on the board.</div>{% endif %}
+
+    <div class="stats">
+      <div class="stat total"><b>{{ boards|length }}</b><span>connection{{ "" if boards|length == 1 else "s" }}</span></div>
+      {% for key, (label, _) in platforms.items() %}
+        <div class="stat {% if not by_platform[key] %}zero{% endif %}"><b>{{ by_platform[key] }}</b><span>{{ label }}</span></div>
+      {% endfor %}
+    </div>
+
+    {% if boards %}
+      <table class="boards">
+        <thead><tr><th>Company</th><th>Platform</th><th>Title must include</th><th>Location must include</th><th>On board</th><th></th></tr></thead>
+        <tbody>
+          {% for b in boards %}
+            <tr>
+              <td><strong>{{ b.name }}</strong><br>{% if b.url %}<a href="{{ b.url }}" target="_blank" rel="noopener" class="any">{{ b.url|replace("https://", "") }} &#8599;</a>{% endif %}</td>
+              <td>{{ platforms[b.platform][0] if b.platform in platforms else b.platform }}</td>
+              <td>{% for k in b.title_keywords or [] %}<span class="kw">{{ k }}</span>{% else %}<span class="any">any title</span>{% endfor %}</td>
+              <td>{% for k in b.location_keywords or [] %}<span class="kw">{{ k }}</span>{% else %}<span class="any">any location</span>{% endfor %}</td>
+              <td>{{ b.jobs }} job{{ "" if b.jobs == 1 else "s" }}</td>
+              <td>
+                <form method="post" action="/boards/remove" data-name="{{ b.name }}" onsubmit="return confirm('Disconnect ' + this.dataset.name + '?\n\nFetch will stop pulling its postings. Jobs already on the board stay.')">
+                  <input type="hidden" name="platform" value="{{ b.platform }}">
+                  <input type="hidden" name="token" value="{{ b.token }}">
+                  <button class="btn btn-danger btn-sm" type="submit">Remove</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty">No boards connected yet. Add one below.</p>
+    {% endif %}
+
+    <section class="card" id="add">
+      <h2>Connect a new board</h2>
+      <div class="sub">Find the company's careers page. If its job links go to one of the platforms below, the <strong>token</strong> is the company's part of that URL.</div>
+      <details class="howto">
+        <summary>Where do I find the token?</summary>
+        <table>
+          <tr><th>Platform</th><th>Token is the <code>&lt;x&gt;</code> in…</th></tr>
+          {% for key, (label, url) in platforms.items() %}
+            <tr><td>{{ label }}</td><td><code>{{ url|replace("https://", "")|replace("{token}", "<x>") }}</code>{% if key == "smartrecruiters" %} (case matters){% endif %}</td></tr>
+          {% endfor %}
+        </table>
+        <p>Boards on other sites (LinkedIn, SEEK, Workday…) can't be connected, but you can still add their jobs one at a time with <em>+ Add job</em> on the board or the <a href="/bookmarklet">bookmarklet</a>.</p>
+      </details>
+      <form method="post" action="/boards/add" id="board-form">
+        <div class="grid">
+          <div class="field"><label for="name">Company name</label><input type="text" id="name" name="name" required placeholder="e.g. Canva"></div>
+          <div class="field"><label for="platform">Platform</label>
+            <select id="platform" name="platform" required>
+              {% for key, (label, _) in platforms.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="field full"><label for="token">Board token</label><input type="text" id="token" name="token" required placeholder="e.g. canva">
+            <span class="hint" id="token-hint"></span></div>
+          <div class="field"><label for="title_keywords">Title must include (optional)</label><input type="text" id="title_keywords" name="title_keywords" placeholder="quality, machine learning, evaluation">
+            <span class="hint">Comma-separated; keep a posting if its title contains any of these. Blank = all titles.</span></div>
+          <div class="field"><label for="location_keywords">Location must include (optional)</label><input type="text" id="location_keywords" name="location_keywords" placeholder="australia, sydney, remote">
+            <span class="hint">Comma-separated; blank = all locations.</span></div>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn" id="test-btn">Test connection</button>
+          <button type="submit" class="btn btn-primary">Connect board</button>
+          <span id="test-result" aria-live="polite"></span>
+        </div>
+      </form>
+    </section>
+  </div>
+  <script>
+  (function () {
+    const urls = {{ platforms|tojson }};
+    const f = document.getElementById("board-form").elements;
+    const hint = document.getElementById("token-hint");
+    const result = document.getElementById("test-result");
+    function updateHint() {
+      const tpl = urls[f.platform.value][1];
+      hint.textContent = "Board URL: " + tpl.replace("{token}", f.token.value.trim() || "<token>");
+    }
+    f.platform.addEventListener("change", updateHint);
+    f.token.addEventListener("input", updateHint);
+    // Pasting a full board URL fills in the platform and token.
+    f.token.addEventListener("paste", function () {
+      setTimeout(function () {
+        const v = f.token.value.trim();
+        for (const [key, [, tpl]] of Object.entries(urls)) {
+          const prefix = tpl.replace("{token}", "").replace("https://", "");
+          const i = v.indexOf(prefix);
+          if (i !== -1) {
+            f.platform.value = key;
+            f.token.value = v.slice(i + prefix.length).split(/[/?#]/)[0];
+            updateHint();
+            return;
+          }
+        }
+      });
+    });
+    updateHint();
+    document.getElementById("test-btn").addEventListener("click", async function () {
+      const btn = this;
+      result.className = ""; result.textContent = "Checking…"; btn.disabled = true;
+      const params = new URLSearchParams({
+        platform: f.platform.value, token: f.token.value,
+        title_keywords: f.title_keywords.value, location_keywords: f.location_keywords.value,
+      });
+      try {
+        const resp = await fetch("/boards/test?" + params);
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || "Request failed");
+        result.className = "ok";
+        result.textContent = `Connected: ${data.total} open posting${data.total === 1 ? "" : "s"}, ${data.matching} match your filters.`;
+        if (data.sample.length) {
+          const ul = document.createElement("ul");
+          for (const t of data.sample) { const li = document.createElement("li"); li.textContent = t; ul.appendChild(li); }
+          result.appendChild(ul);
+        }
+      } catch (e) {
+        result.className = "err"; result.textContent = e.message;
+      } finally { btn.disabled = false; }
+    });
+  })();
+  </script>
+</body>
+</html>
