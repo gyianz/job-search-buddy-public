@@ -51,9 +51,20 @@ After that, everyday use is just asking:
 | Update what it knows about you | The **Profile** page, or "add this to my profile" |
 | Change how jobs are judged | The **Rubric** page |
 
-The first time you double-click the launcher, macOS may say it can't be
-opened. Right-click it, choose **Open**, then **Open** again; after that a
-double-click works.
+**The first time you double-click the launcher**, macOS says Apple "could
+not verify" it is free of malware. It says this about any script downloaded
+from the internet that isn't signed by a paid Apple developer account. The
+launcher is a short text file that starts the dashboard and opens your
+browser; you can read it in TextEdit first. To allow it once:
+
+1. Click **Done** on the warning.
+2. Open **System Settings** → **Privacy & Security**, and scroll down to
+   the message about "Start Job Search Buddy.command".
+3. Click **Open Anyway**, confirm with your password or Touch ID, then
+   click **Open Anyway** again.
+
+From then on a double-click works. If you'd rather not do this, skip the
+launcher: just ask Claude to "open the dashboard".
 
 **Always read a tailored resume or cover letter before sending it.** Claude
 is told never to invent experience, but the application goes out under your

@@ -42,8 +42,12 @@ available, open it there for them. If port 8000 is taken, use `PORT=8001`.
 
 Tell them that on a Mac, next time they can double-click
 **Start Job Search Buddy.command** in the folder instead of asking you. The
-first time, macOS may block it: right-click it, choose **Open**, then
-**Open** again.
+first time, macOS warns that Apple "could not verify" it (it does this for
+any unsigned script from the internet). To allow it: click **Done**, open
+**System Settings** → **Privacy & Security**, scroll down, click **Open
+Anyway** and confirm. Don't remove the quarantine flag or change security
+settings for them; that's their decision. If they'd rather not, they can
+keep asking you to "open the dashboard".
 
 ## 3. Build their profile
 
